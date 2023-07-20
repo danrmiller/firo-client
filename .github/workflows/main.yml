@@ -1,0 +1,44 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+env:
+  EXOLIX_AUTHORIZATION: ${{ secrets.EXOLIX_AUTHORIZATION }}
+  SWAPZONE_API_KEY: ${{ secrets.SWAPZONE_API_KEY }}
+  CHANGENOW_API_KEY: ${{ secrets.CHANGENOW_API_KEY }}
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+
+    steps:
+    - name: Check out code
+      uses: actions/checkout@v3
+      with:
+        repository: TheArcadiaGroup/firo-client
+
+    - name: Setup Node.js environment
+      uses: actions/setup-node@v2
+      with:
+        node-version: '20'
+
+    - name: Install dependencies and build
+      run: |
+        npm ci
+        node electron-vue/build.js
+        USE_HARD_LINKS=false electron-builder build --publish=never
+
+    - name: Upload artifact
+      uses: actions/upload-artifact@v2
+      with:
+        name: build-output
+        path: ./build/
